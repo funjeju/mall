@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Supabase 환경 변수
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL과 Anon Key가 설정되지 않았습니다. .env.local 파일을 확인하세요.')
+// Supabase 클라이언트 생성 (환경 변수가 없으면 빈 클라이언트)
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : createClient('https://placeholder.supabase.co', 'placeholder-key')
+
+// 환경 변수 체크 함수
+export const isSupabaseConfigured = () => {
+  return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY)
 }
-
-// Supabase 클라이언트 생성
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // TypeScript 타입 정의
 export interface Product {
