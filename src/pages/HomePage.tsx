@@ -35,8 +35,18 @@ export function HomePage() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut()
-    navigate('/login')
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('로그아웃 오류:', error)
+      }
+      setUser(null)
+      navigate('/')
+    } catch (error) {
+      console.error('로그아웃 오류:', error)
+      setUser(null)
+      navigate('/')
+    }
   }
 
   if (loading) {

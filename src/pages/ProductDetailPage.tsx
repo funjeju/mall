@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase, Product } from '@/lib/supabase'
+import { supabase, Product, isSupabaseConfigured } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, ShoppingCart, Minus, Plus, Package, Truck, Shield } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { useCart } from '@/contexts/CartContext'
+import { getProductById } from '@/data/mockProducts'
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -25,23 +26,31 @@ export function ProductDetailPage() {
 
   async function loadProduct(productId: string) {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single()
+      // Supabase가 설정되어 있으면 실제 데이터 로드
+      if (isSupabaseConfigured()) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', productId)
+          .single()
 
-      if (error) throw error
-
-      setProduct(data)
+        if (error) {
+          console.warn('Supabase 데이터 로드 실패, Mock 데이터 사용:', error)
+          const mockProduct = getProductById(productId)
+          setProduct(mockProduct || null)
+        } else {
+          setProduct(data)
+        }
+      } else {
+        // Supabase 미설정 시 Mock 데이터 사용
+        console.log('Supabase 미설정, Mock 데이터 사용')
+        const mockProduct = getProductById(productId)
+        setProduct(mockProduct || null)
+      }
     } catch (error) {
-      console.error('상품 로드 오류:', error)
-      toast({
-        title: "오류 발생",
-        description: "상품을 불러오지 못했습니다.",
-        variant: "destructive"
-      })
-      setProduct(null)
+      console.error('상품 로드 오류, Mock 데이터 사용:', error)
+      const mockProduct = getProductById(productId)
+      setProduct(mockProduct || null)
     } finally {
       setLoading(false)
     }

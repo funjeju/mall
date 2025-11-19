@@ -7,6 +7,8 @@ import { ShoppingCart, Plus, Package } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/hooks/use-toast'
 import { supabase, Product } from '@/lib/supabase'
+import { mockProducts, categories as mockCategories } from '@/data/mockProducts'
+import { isSupabaseConfigured } from '@/lib/supabase'
 
 export function ProductList() {
   const navigate = useNavigate()
@@ -23,25 +25,32 @@ export function ProductList() {
 
   async function loadProducts() {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Supabase가 설정되어 있으면 실제 데이터 로드
+      if (isSupabaseConfigured()) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
 
-      if (error) throw error
-
-      setProducts(data || [])
-
-      // 카테고리 추출
-      const uniqueCategories = ['전체', ...new Set(data?.map(p => p.category).filter(Boolean) as string[])]
-      setCategories(uniqueCategories)
+        if (error) {
+          console.warn('Supabase 데이터 로드 실패, Mock 데이터 사용:', error)
+          setProducts(mockProducts)
+          setCategories(mockCategories)
+        } else {
+          setProducts(data || [])
+          const uniqueCategories = ['전체', ...new Set(data?.map(p => p.category).filter(Boolean) as string[])]
+          setCategories(uniqueCategories)
+        }
+      } else {
+        // Supabase 미설정 시 Mock 데이터 사용
+        console.log('Supabase 미설정, Mock 데이터 사용')
+        setProducts(mockProducts)
+        setCategories(mockCategories)
+      }
     } catch (error) {
-      console.error('상품 로드 오류:', error)
-      toast({
-        title: "오류 발생",
-        description: "상품을 불러오지 못했습니다.",
-        variant: "destructive"
-      })
+      console.error('상품 로드 오류, Mock 데이터 사용:', error)
+      setProducts(mockProducts)
+      setCategories(mockCategories)
     } finally {
       setIsLoading(false)
     }
